@@ -187,4 +187,9 @@ def cli() -> None:
     elif args.format == "csv":
         print(format_csv(results))
 
+    if not results:
+        print(
+            f"No verified email addresses found after probing {probed} permutations.",
+            file=sys.stderr,
+        )
     sys.exit(0 if results else 2)

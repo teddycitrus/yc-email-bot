@@ -5,6 +5,16 @@ from email_me.utils import normalize_name
 def generate_permutations(founder: Founder, domain: str) -> list[str]:
     f = normalize_name(founder.first_name)
     l = normalize_name(founder.last_name)
+
+    if not l or l == f:
+        result = []
+        if f:
+            result.append(f"{f}@{domain}")
+        fi = f[0] if f else ""
+        if fi and fi != f:
+            result.append(f"{fi}@{domain}")
+        return result
+
     fi = f[0] if f else ""
     li = l[0] if l else ""
 

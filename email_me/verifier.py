@@ -2,6 +2,7 @@ import re
 import secrets
 import smtplib
 import socket
+import sys
 import time
 from typing import TypedDict
 
@@ -13,6 +14,7 @@ from email_me.models import VerificationResult, VerificationStatus
 EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 _last_probe_time: dict[str, float] = {}
+_warned_hosts: set[str] = {}
 
 
 class _MXEntry(TypedDict):
@@ -34,6 +36,7 @@ def _smtp_probe(email: str, mx_host: str, timeout: int = 10) -> VerificationResu
             latency_ms=int((time.monotonic() - start) * 1000),
         )
 
+    ports_refused = 0
     for port in (25, 587):
         try:
             with smtplib.SMTP(timeout=timeout) as smtp:
@@ -50,9 +53,19 @@ def _smtp_probe(email: str, mx_host: str, timeout: int = 10) -> VerificationResu
                     status = VerificationStatus.UNKNOWN
                 return _result(status, code, message.decode(errors="replace"))
         except ConnectionRefusedError:
+            ports_refused += 1
             continue
         except (smtplib.SMTPException, socket.timeout, socket.gaierror, OSError):
             return _result(VerificationStatus.UNKNOWN)
+
+    if ports_refused == 2 and mx_host not in _warned_hosts:
+        _warned_hosts.add(mx_host)
+        print(
+            "[WARN] Could not connect to MX server on ports 25 or 587.\n"
+            "       This is common on residential ISPs and cloud providers.\n"
+            "       For best results, run from a VPS with unrestricted outbound port 25.",
+            file=sys.stderr,
+        )
 
     return _result(VerificationStatus.UNKNOWN)
 
