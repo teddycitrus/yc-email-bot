@@ -5,6 +5,7 @@ import json
 import re
 import sys
 from datetime import datetime, timezone
+from itertools import zip_longest
 
 import requests
 
@@ -70,13 +71,20 @@ def run(args: argparse.Namespace) -> tuple[CompanyData, list[VerificationResult]
     log(f"[INFO] Found {len(company.founders)} founders: {', '.join(f.full_name for f in company.founders)}")
     log(f"[INFO] Domain: {company.domain}")
 
+    per_founder = [
+        [(email, founder.full_name) for email in generate_permutations(founder, company.domain)]
+        for founder in company.founders
+    ]
     seen: set[str] = set()
     master_list: list[tuple[str, str]] = []
-    for founder in company.founders:
-        for email in generate_permutations(founder, company.domain):
+    for round_entries in zip_longest(*per_founder):
+        for entry in round_entries:
+            if entry is None:
+                continue
+            email, name = entry
             if email not in seen:
                 seen.add(email)
-                master_list.append((email, founder.full_name))
+                master_list.append((email, name))
 
     log(f"[INFO] Generated {len(master_list)} permutations across {len(company.founders)} founders")
 
