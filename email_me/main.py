@@ -4,7 +4,6 @@ import io
 import json
 import re
 import sys
-import time
 from datetime import datetime, timezone
 
 import requests
