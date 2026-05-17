@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-%3E%3D3.10-blue)
 
-`email-me` is a Python CLI tool that finds and verifies founder email addresses from Y Combinator company pages. Given a YC company URL and a count, it scrapes founder names and the company domain, generates common professional email permutations, and verifies them using DNS MX record lookups and SMTP-level handshake probing. Results are emitted in table, JSON, or CSV format.
+Python CLI that finds and verifies founder email addresses from YC pages. Given a YC company URL and a count, it scrapes founder names and the company domain, generates common professional email permutations, and verifies them using DNS MX record lookups and SMTP-level handshake probing. Results are emitted in table, JSON, or CSV format.
 
 ## Installation
 
@@ -44,7 +44,7 @@ email-me https://www.ycombinator.com/companies/airbnb 5 --no-smtp --format csv
 | `--format` | `table` | Output format: `table`, `json`, `csv` |
 | `--timeout` | `10` | SMTP connection timeout in seconds |
 | `--delay` | `1.0` | Delay between SMTP probes in seconds |
-| `--include-catch-all` | off | Include catch-all results in output and count |
+| `--no-catch-all` | off | Don't catch-all results in output and count |
 | `--include-unknown` | off | Include unknown results in output |
 | `--verbose` | off | Print progress to stderr |
 | `--no-smtp` | off | Skip SMTP verification; output permutations only |
