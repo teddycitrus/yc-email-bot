@@ -72,3 +72,4 @@ email-me https://www.ycombinator.com/companies/airbnb 5 --no-smtp --format csv
 - **Port 25 blocked:** Most residential ISPs and cloud providers block outbound port 25. The tool falls back to port 587 automatically.
 - **Catch-all servers:** Some domains accept all RCPT TO addresses. These are flagged as `CATCH_ALL`.
 - **Greylisting:** Large mail providers may temporarily defer connections from unknown IPs, producing `UNKNOWN` results for valid addresses.
+- **Result of Port 25 blocked:** I catch all emails automatically rather than only spitting out verified ones
