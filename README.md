@@ -78,6 +78,29 @@ pytest tests/
 
 ---
 
+## Self-host (free, 24/7)
+
+A small Flask web UI is bundled. It accepts YC URLs / company domains via a text field or a `.txt` upload, plus a per-target count, and streams verified emails back live.
+
+The cheapest path that supports real SMTP verification is an **Oracle Cloud Always Free** Ampere A1 Ubuntu VM. Outbound port 25 is generally available there, while every free serverless host (Vercel / Netlify / Render / HF Spaces / etc.) blocks it. One command after SSHing in:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/teddycitrus/yc-email-bot/main/deploy.sh | sudo bash
+```
+
+The script installs system packages, builds the venv, opens iptables ingress on port 80, probes outbound port 25 (falls back to permutation-only mode if it's blocked), installs a `systemd` unit, and prints the live URL. Re-run the same command to update. Don't forget to **open TCP/80 in your VCN Security List** in the Oracle console — that's the one step the script can't do for you.
+
+Run locally instead:
+
+```sh
+pip install -e ".[web]"
+python -m email_me.web
+```
+
+Then open <http://127.0.0.1:8000>.
+
+---
+
 ## Roadmap
 
 - [x] DNS-based email validation — resolves MX records to verify addresses before sending

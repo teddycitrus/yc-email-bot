@@ -18,7 +18,8 @@
       "PowerShell(Get-CimInstance *)",
       "Bash(python *)",
       "Bash(PYTHONIOENCODING=utf-8 python *)",
-      "WebFetch(domain:a16z.com)"
+      "WebFetch(domain:a16z.com)",
+      "Bash(bash -n deploy.sh)"
     ]
   },
   "enableAllProjectMcpServers": true,
