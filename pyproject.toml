@@ -19,6 +19,13 @@ dev = [
     "responses>=0.25",
     "pytest-mock>=3.12",
 ]
+web = [
+    "flask>=3.0",
+]
 
 [project.scripts]
 email-me = "email_me.main:cli"
+email-me-web = "email_me.web:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["email_me"]

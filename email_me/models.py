@@ -31,6 +31,7 @@ class VerificationResult:
     email: str
     founder_name: str
     status: VerificationStatus
+    role: str = ""
     mx_host: Optional[str] = None
     smtp_code: Optional[int] = None
     smtp_message: Optional[str] = None

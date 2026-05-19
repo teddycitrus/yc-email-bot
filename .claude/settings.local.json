@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(git --version)",
+      "Bash(pip --version)",
+      "Bash(git clone *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(pip install *)",
+      "Bash(python -m pytest -q)",
+      "Bash(python -c \"from email_me.main import cli; import sys; sys.argv=['email-me','--help']; cli\\(\\)\")",
+      "Bash(email-me --help)",
+      "PowerShell($p=[Environment]::GetEnvironmentVariable\\('Path','User'\\); if \\($p -split ';' -contains 'C:\\\\Users\\\\johnm\\\\AppData\\\\Roaming\\\\Python\\\\Python314\\\\Scripts'\\) { \"OK: Scripts dir is in persisted User PATH\" } else { \"MISSING from User PATH. Current User PATH entries:\"; $p -split ';' })",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-CimInstance *)",
+      "Bash(python *)",
+      "Bash(PYTHONIOENCODING=utf-8 python *)",
+      "WebFetch(domain:a16z.com)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "claude-flow"
+  ]
+}

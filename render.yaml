@@ -1,0 +1,21 @@
+# Render Blueprint — one-click free deploy.
+# https://render.com/docs/blueprint-spec
+#
+# Free tier note: instance sleeps after 15 min idle (~30s cold start on next
+# request). Hugging Face Spaces (Dockerfile in repo root) is the better
+# free option if you want zero cold starts. Port 25 is blocked on both,
+# so EMAIL_ME_DEFAULT_NO_SMTP is set to surface permutation-only output
+# clearly instead of a wall of UNKNOWN results.
+services:
+  - type: web
+    name: email-me
+    runtime: python
+    plan: free
+    buildCommand: pip install ".[web]" gunicorn
+    startCommand: gunicorn --workers 2 --threads 4 --worker-class gthread --timeout 600 --bind 0.0.0.0:$PORT "email_me.web:create_app()"
+    healthCheckPath: /
+    envVars:
+      - key: EMAIL_ME_DEFAULT_NO_SMTP
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.11"

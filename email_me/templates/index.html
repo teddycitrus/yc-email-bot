@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>email-me</title>
+  <style>
+    :root {
+      --bg: #0f1115; --fg: #e6e8ec; --muted: #8b93a7;
+      --card: #161922; --line: #232838; --accent: #7aa2ff;
+      --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg);
+           font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p.lead { color: var(--muted); margin: 0 0 24px; }
+    form { background: var(--card); border: 1px solid var(--line);
+           border-radius: 10px; padding: 18px; }
+    label { display: block; font-weight: 600; margin: 10px 0 6px; }
+    .hint { color: var(--muted); font-weight: 400; font-size: 12px; }
+    textarea, input[type=number], input[type=file] {
+      width: 100%; background: #0c0e14; color: var(--fg);
+      border: 1px solid var(--line); border-radius: 6px; padding: 10px;
+      font: inherit;
+    }
+    textarea { min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 180px; }
+    button {
+      background: var(--accent); color: #0b0e16; border: 0;
+      padding: 10px 16px; border-radius: 6px; font-weight: 600;
+      cursor: pointer; margin-top: 14px;
+    }
+    button[disabled] { opacity: .5; cursor: not-allowed; }
+    .results { margin-top: 28px; display: flex; flex-direction: column; gap: 14px; }
+    .target {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .target h3 { margin: 0; font-size: 15px; word-break: break-all; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .emails { margin-top: 10px; display: grid; gap: 4px; }
+    .email {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; padding: 4px 0; border-top: 1px dashed var(--line);
+    }
+    .email:first-child { border-top: 0; }
+    .tag {
+      font-size: 11px; padding: 1px 6px; border-radius: 4px;
+      background: #1c2030; color: var(--muted); font-family: inherit;
+    }
+    .tag.verified { background: #14361f; color: var(--ok); }
+    .tag.catch_all { background: #3a2e0c; color: var(--warn); }
+    .tag.does_not_exist, .tag.undeliverable { background: #3a1818; color: var(--bad); }
+    .err { color: var(--bad); margin-top: 6px; font-size: 13px; }
+    .status { color: var(--muted); margin-top: 14px; font-size: 13px; }
+    .footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
+    .banner {
+      background: #2a2410; border: 1px solid #5a4715; color: #ffd97a;
+      border-radius: 8px; padding: 10px 14px; margin: 0 0 18px;
+      font-size: 13px;
+    }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 14px;
+             color: var(--muted); font-weight: 400; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>email-me</h1>
+  <p class="lead">Find &amp; verify founder/contact emails from a YC page or any company domain. Streams results live.</p>
+
+  {% if default_no_smtp %}
+  <div class="banner">
+    <strong>Serverless deploy:</strong> this host blocks outbound port 25, so real SMTP verification can&rsquo;t run here.
+    Results are ranked email <em>permutations</em> &mdash; likely but unverified. Uncheck the box below to attempt SMTP anyway (will mostly return <code>unknown</code>).
+  </div>
+  {% endif %}
+
+  <form id="form">
+    <label>
+      Targets
+      <span class="hint">— one per line: a YC URL (<code>https://www.ycombinator.com/companies/&lt;slug&gt;</code>) or company website/domain (<code>acme.com</code>)</span>
+    </label>
+    <textarea id="targets" name="targets" placeholder="https://www.ycombinator.com/companies/stripe&#10;databricks.com"></textarea>
+
+    <div class="row">
+      <div>
+        <label>…or upload a .txt file <span class="hint">(one target per line)</span></label>
+        <input id="file" name="file" type="file" accept=".txt,text/plain" />
+      </div>
+      <div style="max-width: 200px;">
+        <label>Emails per target</label>
+        <input id="count" name="count" type="number" min="1" max="{{ max_count }}" value="2" />
+      </div>
+    </div>
+
+    <label class="check">
+      <input id="no_smtp" name="no_smtp" type="checkbox" value="1" {% if default_no_smtp %}checked{% endif %} />
+      Skip SMTP verification (faster &mdash; returns ranked permutations only, marked <code>unknown</code>)
+    </label>
+
+    <button id="go" type="submit">Find emails</button>
+    <span id="status" class="status"></span>
+  </form>
+
+  <div id="results" class="results"></div>
+
+  <p class="footer">
+    Max {{ max_targets }} targets per request, up to {{ max_count }} emails each. Verification uses SMTP probing; results
+    on hosts that block outbound port 25 may degrade to <code>catch_all</code> / <code>unknown</code>.
+  </p>
+</div>
+
+<script>
+(() => {
+  const form    = document.getElementById('form');
+  const goBtn   = document.getElementById('go');
+  const status  = document.getElementById('status');
+  const results = document.getElementById('results');
+  const cards   = new Map();  // target -> { root, emails, meta }
+
+  function ensureCard(target) {
+    if (cards.has(target)) return cards.get(target);
+    const root = document.createElement('div');
+    root.className = 'target';
+    root.innerHTML = `
+      <h3></h3>
+      <div class="meta"></div>
+      <div class="emails"></div>`;
+    root.querySelector('h3').textContent = target;
+    results.appendChild(root);
+    const card = {
+      root,
+      title: root.querySelector('h3'),
+      meta : root.querySelector('.meta'),
+      emails: root.querySelector('.emails'),
+      found: 0, probed: 0, total: 0,
+    };
+    cards.set(target, card);
+    return card;
+  }
+
+  function setMeta(card) {
+    const parts = [];
+    if (card.domain) parts.push(card.domain);
+    if (card.total)  parts.push(`${card.total} permutations`);
+    if (card.probed) parts.push(`probed ${card.probed}`);
+    if (card.found)  parts.push(`found ${card.found}`);
+    card.meta.textContent = parts.join(' · ');
+  }
+
+  function handleEvent(ev) {
+    if (ev.type === 'batch_start') {
+      status.textContent = `Processing ${ev.total_targets} target(s)…`;
+      return;
+    }
+    if (ev.type === 'batch_done') {
+      status.textContent = 'Done.';
+      goBtn.disabled = false;
+      return;
+    }
+    if (!ev.target) return;
+    const card = ensureCard(ev.target);
+
+    if (ev.type === 'start') {
+      card.title.textContent = ev.target;
+    } else if (ev.type === 'company') {
+      if (ev.company && ev.company !== ev.domain) card.title.textContent = ev.company;
+      card.domain = ev.domain;
+      setMeta(card);
+    } else if (ev.type === 'permutations') {
+      card.total = ev.total;
+      setMeta(card);
+    } else if (ev.type === 'result') {
+      card.probed += 1;
+      if (ev.accepted) card.found += 1;
+      const row = document.createElement('div');
+      row.className = 'email';
+      const status = (ev.status || 'unknown').toLowerCase();
+      row.innerHTML = `
+        <span></span>
+        <span class="tag"></span>
+        <span class="tag status"></span>`;
+      row.children[0].textContent = ev.email;
+      row.children[1].textContent = ev.role || '';
+      const tag = row.children[2];
+      tag.textContent = status.replace(/_/g, ' ');
+      tag.classList.add(status);
+      card.emails.appendChild(row);
+      setMeta(card);
+    } else if (ev.type === 'done') {
+      setMeta(card);
+    } else if (ev.type === 'error') {
+      const e = document.createElement('div');
+      e.className = 'err';
+      e.textContent = `Error: ${ev.message}`;
+      card.root.appendChild(e);
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    results.innerHTML = '';
+    cards.clear();
+    status.textContent = '';
+    goBtn.disabled = true;
+
+    const fd = new FormData(form);
+    let resp;
+    try {
+      resp = await fetch('/process', { method: 'POST', body: fd });
+    } catch (err) {
+      status.textContent = 'Network error: ' + err.message;
+      goBtn.disabled = false;
+      return;
+    }
+    if (!resp.ok && !resp.body) {
+      status.textContent = `HTTP ${resp.status}`;
+      goBtn.disabled = false;
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        try { handleEvent(JSON.parse(line)); }
+        catch (_) { /* tolerate partial/garbage lines */ }
+      }
+    }
+    if (!status.textContent || status.textContent.startsWith('Processing')) {
+      status.textContent = 'Done.';
+    }
+    goBtn.disabled = false;
+  });
+})();
+</script>
+</body>
+</html>
