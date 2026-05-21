@@ -122,7 +122,8 @@ Contributions are welcome. To contribute:
 
 ### Top Contributors
 
-- [@dzkchen](https://github.com/dzkchen) — major contributor
+- [@dzkchen](https://github.com/dzkchen) - minimum viable product
+- [@teddycitrus](https://github.com/teddycitrus) - hosting/deployment
 
 ---
 
